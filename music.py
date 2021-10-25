@@ -5,7 +5,6 @@ from discord.ext import commands
 from youtube_dl import YoutubeDL
 import requests
 from random import randint
-players = {}
 def search(query):
     with YoutubeDL({'format': 'bestaudio', 'noplaylist': 'True'}) as ydl:
         try:
@@ -14,12 +13,7 @@ def search(query):
             info = ydl.extract_info(f"ytsearch:{query}", download=False)['entries'][0]
         else:
             info = ydl.extract_info(query, download=False)
-        num = randint(0000,9999)
-        title = info['title']
-        source = info['formats'][0]['url']
-        players[f"{num}"] = {}
-        players[f"{num}"]['title'] = title
-        players[f"{num}"]['source'] = source
+    return (info, info['formats'][0]['url'])
 Client = commands.Bot(command_prefix="!")
 @Client.command(name="Join",help="joins the channel the author is in", aliases=["join", "J", "j"])
 async def Join(context):
@@ -59,20 +53,17 @@ async def play(context,*,query):
     if member_voice and member_voice.channel:
         if context.voice_client:
             client_voice = context.voice_client
-            search(query)
-            video = players[0]['title']
-            source = players[0]['source']
+            video, source = search(query)
             print(players[0]['source'])
-            await context.send(f"Now playing: {video}")
+            await context.send(f"Now playing: {video['title']}")
             client_voice.play(FFmpegPCMAudio(source))
             client_voice.is_playing()
         else:
             await member_voice.channel.connect()
             client_voice = context.voice_client
-            search(query)
-            video = players[0]['title']
-            source = players[0]['source']
-            await context.send(f"Now playing: {video}")
+            video, source = search(query)
+            print(players[0]['source'])
+            await context.send(f"Now playing: {video['title']}")
             client_voice.play(FFmpegPCMAudio(source))
             client_voice.is_playing()
             
