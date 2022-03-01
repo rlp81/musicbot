@@ -6,6 +6,7 @@ from discord.ext import commands
 from youtube_dl import YoutubeDL
 import requests
 import lyricsgenius as lg
+FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
 genius = lg.Genius('key', skip_non_songs=True, excluded_terms=["(Remix)", "(Live)"], remove_section_headers=True)
 def getlyrics(video):
     song = genius.search_song(title=video["playlist"],artist=video["artist"])
@@ -27,7 +28,7 @@ async def nextque(self):
                             video = self.query[0]
                             self.np = video['title']
                             source = video['formats'][0]['url']
-                            self.voice_client.play(FFmpegPCMAudio(source, executable="C:\\ffmpeg\\bin\\ffmpeg.exe"))
+                            self.voice_client.play(FFmpegPCMAudio(source,**FFMPEG_OPTIONS))#, executable="C:\\ffmpeg\\bin\\ffmpeg.exe"))  For Windows system
                             emb = discord.Embed(title="Now playing", description=f"[{video['title']}]({video['webpage_url']})\n**Uploader:** {video['uploader']}", color=0xff2700)
                             emb.set_thumbnail(url=video['thumbnail'])
                             await self.voice_context.send(embed=emb)
@@ -38,7 +39,7 @@ async def nextque(self):
                         self.time = 0
                         video = self.query[0]
                         source = video['formats'][0]['url']
-                        self.voice_client.play(FFmpegPCMAudio(source, executable="C:\\ffmpeg\\bin\\ffmpeg.exe"))
+                        self.voice_client.play(FFmpegPCMAudio(source,**FFMPEG_OPTIONS))#, executable="C:\\ffmpeg\\bin\\ffmpeg.exe"))  For Windows system
                         emb = discord.Embed(title="Now playing", description=f"[{video['title']}]({video['webpage_url']})\n**Uploader:** {video['uploader']}", color=0xff2700)
                         emb.set_thumbnail(url=video['thumbnail'])
                         await self.voice_context.send(embed=emb)
@@ -63,6 +64,10 @@ class Music(commands.Cog):
         self.np = None
         self.lop = False
         self.time = 0
+        import aiohttp
+        self.session = aiohttp.ClientSession()
+    def cog_unload(self):
+        self.client.loop.create_task(self.session.close()) 
     @commands.command(name="Loop",help="Loops the current song that is playing",aliases=["loop"])
     async def loop(self, context):
         if self.query != []:
@@ -218,7 +223,7 @@ class Music(commands.Cog):
                 source = video['formats'][0]['url']
                 emb = discord.Embed(title="Now playing", description=f"[{video['title']}]({video['webpage_url']})\n**Uploader:** {video['uploader']}", color=0xff2700)
                 emb.set_thumbnail(url=video['thumbnail'])
-                client_voice.play(FFmpegPCMAudio(source,executable="C:\\ffmpeg\\bin\\ffmpeg.exe"))
+                client_voice.play(FFmpegPCMAudio(source,**FFMPEG_OPTIONS))#,executable="C:\\ffmpeg\\bin\\ffmpeg.exe")) For Windows system
                 self.np = video["title"]
                 self.query.append(video)
                 await context.send(embed=emb)
